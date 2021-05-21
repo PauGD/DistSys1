@@ -8,7 +8,7 @@ import redis
 from flask import Flask
 from prova import app
 import requests
-
+import copy
 import json
 #app.run()
 
@@ -37,6 +37,7 @@ def startWorker( PROCES_PID):
             fitxer=requests.get(url)
          
             if( data['Tipus']== "Count"):
+                print("Num par=")
                 print(countWords(fitxer.text))
             else:
                 if( data['Tipus']=="word" ):
@@ -72,7 +73,20 @@ def addjob( argument ):
     re.lpush( "JobList", argument)
 
     return 0
-    
+
+
+def addMultipleJobs( argument ):
+    data= json.loads(argument)
+    url= data['URL']
+    multipleurl=url.split()
+    for i in range( 0, len(multipleurl)):
+        data['URL']= multipleurl[i]
+        abc=json.dumps(data)
+        re.lpush( "JobList", abc)
+
+    return 0
+
+
 
 
 def createWorker():
@@ -105,6 +119,7 @@ server.register_function(deleteWorker)
 server.register_function(createWorker)
 server.register_function(startWorker)
 server.register_function(addjob)
+server.register_function(addMultipleJobs)
 #def listWorkers():
 
 try:
