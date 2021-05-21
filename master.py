@@ -7,8 +7,9 @@ import time
 import redis
 from flask import Flask
 from prova import app
+import requests
 
-
+import json
 #app.run()
 
 
@@ -31,7 +32,39 @@ def startWorker( PROCES_PID):
         a=re.rpop("JobList")
         if a!= None:
             print(a)
+            data=json.loads(a)
+            url= data['URL']
+            fitxer=requests.get(url)
+         
+            if( data['Tipus']== "Count"):
+                print(countWords(fitxer.text))
+            else:
+                if( data['Tipus']=="word" ):
+                    tupla= wordcount(fitxer.text)
+                    print( tupla["Funciona"])
+            
+            #print(countWords(fitxer.text))
             time.sleep(5)
+
+def countWords( filetext):
+    word=filetext.split()
+    return( len(word))
+
+def wordcount( filetext):
+    separated=filetext.split()
+    llistaoccur= []
+    tuplenames= {}
+    for i in separated:
+        if i not in llistaoccur:
+            llistaoccur.append(i)
+    
+    for j in range(0, len(llistaoccur)):
+        tuplenames[llistaoccur[j]]= separated.count(llistaoccur[j])
+
+    return tuplenames
+
+
+
 
 
 def addjob( argument ):
