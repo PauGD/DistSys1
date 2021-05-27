@@ -1,6 +1,6 @@
 from flask import Flask, send_file
 
-app= Flask( __name__)
+app = Flask( __name__)
 
 @app.route('/')
 def hello():
@@ -8,7 +8,7 @@ def hello():
 
 @app.route('/flaskFiles/<path>')
 def hello2(path):
-    return send_file(path, as_attachment=True)
+    return send_file(path, as_attachment = True)
 
 if __name__ == '__main__':
     app.run()
