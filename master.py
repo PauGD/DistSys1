@@ -30,31 +30,32 @@ def startWorker( PROCES_PID):
     re = redis.Redis(host = 'localhost', port = 6379, db = 0)
     result = ""
     while (1):
-        a = re.brpop("JobList")[1]
-        if a != None:
-            #print(a)
-            data = json.loads(a)
-            url = data['URL']
-            fitxer = requests.get(url)
-            if(fitxer.status_code == 500):
-                print("ERROR FILE NOT FOUND")
-                exit(0)
-            else:
-                if(data['Tipus'] == "Count"):
-                    print(fitxer.text)
-                    result0 = countWords(fitxer.text)
-                    result = json.dumps(result0)
+        element = re.brpop("JobList")[1]
+        if element != None:
+            data = json.loads(element)
+            if(data['Tipus'] != "Add"):
+                url = data['URL']
+                fitxer = requests.get(url)
+                if(fitxer.status_code == 500):
+                    print("ERROR FILE NOT FOUND")
+                    exit(0)
                 else:
-                    if(data['Tipus'] == "Word"):
-                        result0 = wordCount(fitxer.text)
+                    if(data['Tipus'] == "Count"):
+                        result0 = countWords(fitxer.text)
                         result = json.dumps(result0)
+                    else:
+                        if(data['Tipus'] == "Word"):
+                            result0 = wordCount(fitxer.text)
+                            result = json.dumps(result0)
+                    requests.delete(url)
+                    re.lpush(data['ID'], result)
+            else:
+                if(data['Tipus'] == "Add"):
+                    element1 = addResults(re, element)
 
-            requests.delete(url)
-            re.lpush(data['ID'], result)
+            time.sleep(1)
 
-            time.sleep(5)
-
-#def addResults():sortida ="El resultat es:"for keys, value in tupla.items():sortida += str(keys)sortida += str("->")sortida += str(value)sortida += str("---- ")print(sortida)
+#def addResults(): sortida ="El resultat es:"for keys, value in tupla.items():sortida += str(keys)sortida += str("->") sortida += str(value) sortida += str("---- ")print(sortida)
 
 def countWords(filetext):
     word = filetext.split()
@@ -78,11 +79,11 @@ def addJob(argument):
     re.lpush("JobList", argument)
     data = json.loads(argument)
     mult = re.brpop(data['ID'])[1]
-    print(mult)
-    return 0
+    return mult
 
 
 def addMultipleJobs(argument):
+    nElements = 0
     data = json.loads(argument)
     url = data['URL']
     multipleurl = url.split()
@@ -90,9 +91,46 @@ def addMultipleJobs(argument):
         data['URL'] = multipleurl[i]
         abc = json.dumps(data)
         re.lpush("JobList", abc)
+        nElements = nElements + 1
 
-    return 0
+    addWorker = {"ID": data['ID'], "Tipus": "Add", "URL" : nElements}
+    addWorker2 = json.dumps(addWorker)
+    re.lpush("JobList", addWorker2)
 
+    data1 = "mult, result" + str(data['ID'])
+    mult = re.brpop(data1)[1]
+
+    return (mult)
+
+def addResults(re, argument):
+    data = json.loads(argument)
+    url = data['URL']
+    id = data['ID']
+    element0 = re.blpop(id)[1]
+    element0 = json.loads(element0)
+    url = url - 1
+
+    if type(element0) is dict:
+        for i in range (url):
+            element1 = re.blpop(id)[1]
+            element1 = json.loads(element1)
+            for key in element1:
+                if(key in element0):
+                    newElement = element1[key] + element0[key]
+                else:
+                    newElement = element1[key]
+                element0[key] = newElement
+    else:
+        for i in range (url):
+            element1 = re.blpop(id)[1]
+            element1 = json.loads(element1)
+            element0 = element0 + element1
+
+    data1 = "mult, result" + str(data['ID'])
+    mult = json.dumps(element0)
+    re.lpush(data1, mult)
+
+    return(0)
 
 def createWorker():
     global PROCES_PID
@@ -105,7 +143,6 @@ def createWorker():
     PROCES_PID += 1
 
     return 0
-
 
 def deleteWorker(PID):
     global PROCES_LIST
