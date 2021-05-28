@@ -12,7 +12,8 @@ import json
 #app.run()
 
 
-re= redis.Redis(host = 'localhost', port = 6379, db = 0)
+re = redis.Redis(host = 'localhost', port = 6379, db = 0)
+
 
 PROCES_PID = 0
 PROCES_LIST = {} # set=  PID:proc
@@ -29,7 +30,7 @@ def startWorker( PROCES_PID):
     re = redis.Redis(host = 'localhost', port = 6379, db = 0)
     result = ""
     while (1):
-        a = re.rpop("JobList")
+        a = re.brpop("JobList")[1]
         if a != None:
             #print(a)
             data = json.loads(a)
@@ -40,12 +41,15 @@ def startWorker( PROCES_PID):
                 exit(0)
             else:
                 if(data['Tipus'] == "Count"):
-            	    result0 = countWords(fitxer.text)
-                    result = str(result0)
+                    print(fitxer.text)
+                    result0 = countWords(fitxer.text)
+                    result = json.dumps(result0)
                 else:
                     if(data['Tipus'] == "Word"):
-                        result = wordCount(fitxer.text)
+                        result0 = wordCount(fitxer.text)
+                        result = json.dumps(result0)
 
+            requests.delete(url)
             re.lpush(data['ID'], result)
 
             time.sleep(5)
@@ -73,8 +77,8 @@ def wordCount(filetext):
 def addJob(argument):
     re.lpush("JobList", argument)
     data = json.loads(argument)
-    mult = re.lpop(data['ID'])
-    #print(mult)
+    mult = re.brpop(data['ID'])[1]
+    print(mult)
     return 0
 
 
