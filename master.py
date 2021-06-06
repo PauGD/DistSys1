@@ -146,14 +146,31 @@ def createWorker():
 
 def deleteWorker(PID):
     global PROCES_LIST
-
-    procac = PROCES_LIST[PID]
-
-    procac.kill()
+    global PROCES_PID
+    res=0
+    if(PID> PROCES_PID-1):
+      res=0
+    else:
+      procac = PROCES_LIST[PID]
+      procac.kill()
+      res=1
+    return res
 
 def list_contents(dir_name):
     logging.info('list_contents(%s)', dir_name)
     return os.listdir(dir_name)
+
+def listWorkers():
+    global PROCES_LIST
+    global PROCES_PID
+    workers=" workers: "
+    for i in range(PROCES_PID):
+        workers= workers+("ID: "+str(i))
+        if( PROCES_LIST[i].is_alive()):
+            workers= workers + (" Status: is alive ,  ")
+        else:
+           workers= workers +(" Status: id dead,  ")
+    return workers
 
 server.register_function(list_contents)
 server.register_function(deleteWorker)
@@ -161,7 +178,7 @@ server.register_function(createWorker)
 server.register_function(startWorker)
 server.register_function(addJob)
 server.register_function(addMultipleJobs)
-
+server.register_function(listWorkers)
 
 try:
     print('Use Control-C to exit')
