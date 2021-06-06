@@ -4,8 +4,7 @@ import os
 import logging
 import time
 import redis
-from flask import Flask
-from prova import app
+
 import requests
 import copy
 import json
